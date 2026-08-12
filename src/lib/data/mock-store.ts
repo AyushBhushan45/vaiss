@@ -848,6 +848,68 @@ Bluetooth audio transmission relies on compression algorithms (codecs) to send m
     ],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
+  },
+  {
+    id: 'eb-14',
+    slug: 'how-to-power-on-laptop',
+    title: 'How to Power On Laptop 💻',
+    subtitle: 'The Essential Hardware & Power Management Guide for Laptop Owners',
+    author: 'John AG Family',
+    price: 49,
+    currency: 'USD',
+    category_id: '10000000-0000-0000-0000-000000000004',
+    category_name: 'Productivity & Leadership',
+    page_count: 95,
+    published: true,
+    featured: true,
+    bestseller: false,
+    rating: 4.9,
+    review_count: 85,
+    cover_url: '/images/how-to-power-on-laptop.png',
+    file_path: 'private/how-to-power-on-laptop.pdf',
+    short_description: 'Master laptop power states, boot diagnostics, battery preservation protocols, and instant power-on troubleshooting.',
+    description: `How to Power On Laptop 💻 by John AG Family is the ultimate hardware power management guide designed for professionals, remote executives, and tech enthusiasts.
+
+### Master Your Device Power Architecture
+This publication covers everything from physical power button mechanics, BIOS/UEFI power state transitions (S0 to S5), power delivery via USB-C PD, to diagnosing non-responsive laptops.
+
+### Core Mastery Frameworks:
+1. **Physical & Software Power Sequences**: Understand how ACPI power states dictate laptop cold boots, sleep, and hibernation.
+2. **USB Power Delivery & Wattage Protocol**: Select the exact charger wattage, voltage rails, and smart PD cables to prevent motherboard power throttle.
+3. **Battery Health Preservation Protocols**: Implement charge-limit algorithms (80% thresholds) to triple battery lifespan.
+4. **Emergency Power Diagnostics**: Follow a step-by-step flowchart to resurrect non-booting or unresponsive laptops in under 5 minutes.`,
+    benefits_json: [
+      'Master physical and software power button mechanisms across Windows and Mac.',
+      'Understand USB-C Power Delivery (PD) and optimal voltage requirements.',
+      'Implement battery preservation protocols to extend battery lifespan.',
+      'Diagnose and fix unresponsive laptops with a 5-minute boot protocol.'
+    ],
+    toc_json: [
+      { id: 'ch-1', title: 'Chapter 1: Power Button Mechanics & ACPI States', page: 6 },
+      { id: 'ch-2', title: 'Chapter 2: USB-C PD, Adapters & Voltage Rails', page: 30 },
+      { id: 'ch-3', title: 'Chapter 3: Battery Conservation & Charge Thresholds', page: 60 },
+      { id: 'ch-4', title: 'Chapter 4: Emergency Non-Boot Troubleshooting Guide', page: 80 }
+    ],
+    preview_content: `### Chapter 1: Power Button Mechanics & ACPI States
+
+Powering on a modern laptop involves more than pushing a mechanical switch. It triggers an intricate sequence of ACPI state transitions from S5 (Soft Off) to S0 (Working). Understanding these power states ensures instant boot times and optimal hardware longevity.`,
+    chapters: [
+      {
+        id: 'ch-1',
+        title: 'Chapter 1: Power Button Mechanics & ACPI States',
+        pageNumber: 1,
+        content: `### 1.1 The Cold Boot Sequence
+
+When you press the power button, the Embedded Controller (EC) sends a PWRBTN# signal to the chipset. Once voltage rails stabilize, the system initializes the BIOS/UEFI firmware, performs Power-On Self-Test (POST), and hands execution to the operating system bootloader.
+
+#### Key Power Diagnostics:
+1. **Power LED Codes**: Learn how blinking LED sequences signal RAM, CPU, or power rail errors.
+2. **Hard Reset Protocol**: Disconnect power, hold power button for 30 seconds to drain static charge from capacitors.
+3. **BIOS Power Settings**: Enable 'Wake on AC' or 'Restore on AC Power Loss' for workstation setups.`
+      }
+    ],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   }
 ];
 
