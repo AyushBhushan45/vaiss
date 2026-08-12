@@ -24,23 +24,25 @@
   }
 }
 
-/* Custom Utilities & Hardware-Accelerated Mobile Performance */
+/* Custom Utilities & Hardware-Accelerated Mobile & Desktop Performance */
 .glass-panel {
-  background: rgba(15, 23, 42, 0.88);
+  background: rgba(15, 23, 42, 0.94);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  transform: translateZ(0);
 }
 
 .glass-card {
   background: #0E1626;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.15s ease, box-shadow 0.15s ease;
   will-change: transform;
+  transform: translateZ(0);
 }
 
 .glass-card:hover {
   border-color: rgba(234, 179, 8, 0.35);
-  box-shadow: 0 8px 24px -6px rgba(234, 179, 8, 0.15);
-  transform: translateY(-2px);
+  box-shadow: 0 6px 20px -4px rgba(234, 179, 8, 0.15);
+  transform: translateY(-2px) translateZ(0);
 }
 
 .gold-gradient-text {

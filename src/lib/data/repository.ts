@@ -3,12 +3,70 @@ import {
   AdminUser, Customer, DownloadLink, PaymentTransaction, CMSContent, StoreSettings, ActivityLog, EmailTemplate 
 } from '@/types';
 import { INITIAL_EBOOKS, INITIAL_CATEGORIES, INITIAL_COUPONS, INITIAL_REVIEWS } from './mock-store';
+import { createClient } from '@/lib/supabase/client';
+
+const STORAGE_KEYS = {
+  EBOOKS: 'lumina_store_ebooks_v3',
+  CATEGORIES: 'lumina_store_categories_v3',
+  COUPONS: 'lumina_store_coupons_v3',
+  CMS: 'lumina_store_cms_v3',
+  SETTINGS: 'lumina_store_settings_v3',
+  ORDERS: 'lumina_store_orders_v3',
+  REVIEWS: 'lumina_store_reviews_v3',
+  LOGS: 'lumina_store_logs_v3',
+  PURCHASES: 'lumina_store_purchases_v3',
+  ADMIN_USERS: 'lumina_store_admin_users_v3',
+};
+
+function readStorage<T>(key: string, defaultValue: T): T {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (e) {
+      console.warn('Failed to load from localStorage:', e);
+    }
+  }
+  return defaultValue;
+}
+
+function writeStorage<T>(key: string, value: T): void {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      window.dispatchEvent(new CustomEvent('lumina_store_updated', { detail: { key } }));
+    } catch (e) {
+      console.warn('Failed to save to localStorage:', e);
+    }
+  }
+}
 
 // Primary In-Memory Data Engine & Storefront State Source of Truth
 let ebooksStore: Ebook[] = [...INITIAL_EBOOKS];
 let categoriesStore: Category[] = [...INITIAL_CATEGORIES];
 let couponsStore: Coupon[] = [...INITIAL_COUPONS];
 let reviewsStore: Review[] = [...INITIAL_REVIEWS];
+
+let isStoresInitialized = false;
+
+export function syncStoresFromStorage(force: boolean = false) {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    if (!isStoresInitialized || force) {
+      ebooksStore = readStorage(STORAGE_KEYS.EBOOKS, ebooksStore);
+      categoriesStore = readStorage(STORAGE_KEYS.CATEGORIES, categoriesStore);
+      couponsStore = readStorage(STORAGE_KEYS.COUPONS, couponsStore);
+      reviewsStore = readStorage(STORAGE_KEYS.REVIEWS, reviewsStore);
+      cmsStore = readStorage(STORAGE_KEYS.CMS, cmsStore);
+      storeSettingsStore = readStorage(STORAGE_KEYS.SETTINGS, storeSettingsStore);
+      ordersStore = readStorage(STORAGE_KEYS.ORDERS, ordersStore);
+      purchasesStore = readStorage(STORAGE_KEYS.PURCHASES, purchasesStore);
+      activityLogsStore = readStorage(STORAGE_KEYS.LOGS, activityLogsStore);
+      isStoresInitialized = true;
+    }
+  }
+}
 
 let purchasesStore: Purchase[] = [
   {
@@ -112,7 +170,7 @@ let cmsStore: CMSContent = {
     { id: 't-2', name: 'Sarah Jenkins (New York, NY)', role: 'Tech Founder & Investor', rating: 5, comment: 'Hands down the highest ROI books on financial psychology. Unabridged, zero fluff, and instant PDF downloads.', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80' }
   ],
   footer_copyright: '© 2026 Lumina Digital Publishing House. All Rights Reserved.',
-  footer_email: 'support@luminabooks.com',
+  footer_email: 'ayushbhushan45@gmail.com',
   footer_social_twitter: 'https://twitter.com',
   footer_social_linkedin: 'https://linkedin.com',
   footer_social_youtube: 'https://youtube.com'
@@ -122,7 +180,7 @@ let storeSettingsStore: StoreSettings = {
   store_name: 'Lumina Digital Publishing',
   logo_url: '/icon.svg',
   currency: 'USD',
-  contact_email: 'support@luminabooks.com',
+  contact_email: 'ayushbhushan45@gmail.com',
   payment_test_mode: false,
   gateway_stripe_public_key: 'pk_live_lumina_stripe_key_9921',
   gateway_razorpay_key_id: 'rzp_live_lumina_key_8812',
@@ -156,7 +214,7 @@ let downloadLinksStore: DownloadLink[] = [
     id: 'dl-2',
     order_id: 'ord-demo-2',
     ebook_id: 'eb-2',
-    ebook_title: 'The Psychology of Wealth',
+    ebook_title: 'The $100K Wealth Blueprint',
     customer_email: 'sarah.jenkins@example.com',
     token: 'dl_tok_992384_eb2',
     download_count: 1,
@@ -265,6 +323,45 @@ export async function getEbooks(options?: {
   searchQuery?: string;
   publishedOnly?: boolean;
 }): Promise<Ebook[]> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      let query = supabase.from('ebooks').select('*');
+
+      if (options?.publishedOnly !== false) {
+        query = query.eq('published', true);
+      }
+      if (options?.featuredOnly) {
+        query = query.eq('featured', true);
+      }
+      if (options?.bestsellersOnly) {
+        query = query.eq('bestseller', true);
+      }
+      if (options?.categoryId && options.categoryId !== 'all') {
+        query = query.eq('category_id', options.categoryId);
+      }
+
+      const { data, error } = await query;
+      if (!error && data && data.length > 0) {
+        let list = data as Ebook[];
+        if (options?.searchQuery) {
+          const q = options.searchQuery.toLowerCase();
+          list = list.filter(
+            b =>
+              b.title?.toLowerCase().includes(q) ||
+              b.author?.toLowerCase().includes(q) ||
+              b.description?.toLowerCase().includes(q) ||
+              b.short_description?.toLowerCase().includes(q)
+          );
+        }
+        return list;
+      }
+    } catch (e) {
+      console.warn('Supabase getEbooks failed, falling back:', e);
+    }
+  }
+
+  syncStoresFromStorage();
   let list = [...ebooksStore];
 
   if (options?.publishedOnly !== false) {
@@ -293,20 +390,68 @@ export async function getEbooks(options?: {
 }
 
 export async function getEbookBySlug(slug: string): Promise<Ebook | null> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.from('ebooks').select('*').eq('slug', slug).maybeSingle();
+      if (!error && data) {
+        return data as Ebook;
+      }
+    } catch (e) {
+      console.warn('Supabase getEbookBySlug failed, falling back:', e);
+    }
+  }
+  syncStoresFromStorage();
   const book = ebooksStore.find(b => b.slug === slug);
   return book || null;
 }
 
 export async function getEbookById(id: string): Promise<Ebook | null> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.from('ebooks').select('*').eq('id', id).maybeSingle();
+      if (!error && data) {
+        return data as Ebook;
+      }
+    } catch (e) {
+      console.warn('Supabase getEbookById failed, falling back:', e);
+    }
+  }
+  syncStoresFromStorage();
   const book = ebooksStore.find(b => b.id === id);
   return book || null;
 }
 
 export async function getCategories(): Promise<Category[]> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.from('categories').select('*');
+      if (!error && data && data.length > 0) {
+        return data as Category[];
+      }
+    } catch (e) {
+      console.warn('Supabase getCategories failed, falling back:', e);
+    }
+  }
+  syncStoresFromStorage();
   return categoriesStore;
 }
 
 export async function getUserPurchases(userId: string): Promise<Purchase[]> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.from('purchases').select('*, ebook:ebooks(*)').eq('user_id', userId);
+      if (!error && data) {
+        return data as Purchase[];
+      }
+    } catch (e) {
+      console.warn('Supabase getUserPurchases failed, falling back:', e);
+    }
+  }
+  syncStoresFromStorage();
   const userPurchases = purchasesStore.filter(p => p.user_id === userId);
   return userPurchases.map(p => ({
     ...p,
@@ -315,6 +460,18 @@ export async function getUserPurchases(userId: string): Promise<Purchase[]> {
 }
 
 export async function verifyUserOwnership(userId: string, ebookId: string): Promise<boolean> {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.from('purchases').select('id').eq('user_id', userId).eq('ebook_id', ebookId);
+      if (!error && data && data.length > 0) {
+        return true;
+      }
+    } catch (e) {
+      console.warn('Supabase verifyUserOwnership failed, falling back:', e);
+    }
+  }
+  syncStoresFromStorage();
   return purchasesStore.some(p => p.user_id === userId && p.ebook_id === ebookId);
 }
 
@@ -322,6 +479,7 @@ export async function verifyUserOwnership(userId: string, ebookId: string): Prom
 // Admin Authentication Functions
 // ----------------------------------------------------
 export async function authenticateAdmin(email: string, pass: string): Promise<{ success: boolean; user?: AdminUser; error?: string }> {
+  syncStoresFromStorage();
   const normalizedEmail = email.trim().toLowerCase();
   const adminUser = adminUsersStore.find(u => u.email.toLowerCase() === normalizedEmail);
 
@@ -339,14 +497,17 @@ export async function authenticateAdmin(email: string, pass: string): Promise<{ 
 }
 
 export async function getAdminUser(id: string): Promise<AdminUser | null> {
+  syncStoresFromStorage();
   return adminUsersStore.find(u => u.id === id) || adminUsersStore[0] || null;
 }
 
 export async function getAllAdminUsers(): Promise<AdminUser[]> {
+  syncStoresFromStorage();
   return adminUsersStore;
 }
 
 export async function createAdminUser(data: Partial<AdminUser>): Promise<AdminUser> {
+  syncStoresFromStorage();
   const newUser: AdminUser = {
     id: `admin-${Date.now()}`,
     name: data.name || 'Staff Member',
@@ -356,14 +517,26 @@ export async function createAdminUser(data: Partial<AdminUser>): Promise<AdminUs
     created_at: new Date().toISOString()
   };
   adminUsersStore.push(newUser);
+  writeStorage(STORAGE_KEYS.ADMIN_USERS, adminUsersStore);
   logActivity('Admin User Created', `Created staff account ${newUser.email} with role ${newUser.role}`);
   return newUser;
+}
+
+export async function deleteAdminUser(id: string): Promise<boolean> {
+  syncStoresFromStorage();
+  const user = adminUsersStore.find(u => u.id === id);
+  if (!user || user.role === 'owner') return false;
+  adminUsersStore = adminUsersStore.filter(u => u.id !== id);
+  writeStorage(STORAGE_KEYS.ADMIN_USERS, adminUsersStore);
+  logActivity('Staff Access Revoked', `Revoked access for staff member "${user.name}" (${user.email})`);
+  return true;
 }
 
 // ----------------------------------------------------
 // Admin eBook CRUD Functions
 // ----------------------------------------------------
 export async function createAdminEbook(data: Partial<Ebook>): Promise<Ebook> {
+  syncStoresFromStorage();
   const cat = categoriesStore.find(c => c.id === data.category_id);
   const newBook: Ebook = {
     id: `eb-${Date.now()}`,
@@ -402,11 +575,13 @@ export async function createAdminEbook(data: Partial<Ebook>): Promise<Ebook> {
   };
 
   ebooksStore.unshift(newBook);
+  writeStorage(STORAGE_KEYS.EBOOKS, ebooksStore);
   logActivity('eBook Created', `Created eBook "${newBook.title}" ($${newBook.price} USD)`);
   return newBook;
 }
 
 export async function updateAdminEbook(id: string, data: Partial<Ebook>): Promise<Ebook | null> {
+  syncStoresFromStorage();
   const index = ebooksStore.findIndex(b => b.id === id);
   if (index === -1) return null;
 
@@ -419,23 +594,28 @@ export async function updateAdminEbook(id: string, data: Partial<Ebook>): Promis
     updated_at: new Date().toISOString()
   };
 
+  writeStorage(STORAGE_KEYS.EBOOKS, ebooksStore);
   logActivity('eBook Updated', `Updated eBook "${ebooksStore[index].title}"`);
   return ebooksStore[index];
 }
 
 export async function deleteAdminEbook(id: string): Promise<boolean> {
+  syncStoresFromStorage();
   const book = ebooksStore.find(b => b.id === id);
   if (!book) return false;
   ebooksStore = ebooksStore.filter(b => b.id !== id);
+  writeStorage(STORAGE_KEYS.EBOOKS, ebooksStore);
   logActivity('eBook Deleted', `Deleted eBook "${book.title}"`);
   return true;
 }
 
 export async function togglePublishEbook(id: string): Promise<Ebook | null> {
+  syncStoresFromStorage();
   const book = ebooksStore.find(b => b.id === id);
   if (!book) return null;
   book.published = !book.published;
   book.updated_at = new Date().toISOString();
+  writeStorage(STORAGE_KEYS.EBOOKS, ebooksStore);
   logActivity('eBook Status Toggle', `${book.published ? 'Published' : 'Unpublished'} eBook "${book.title}"`);
   return book;
 }
@@ -444,6 +624,7 @@ export async function togglePublishEbook(id: string): Promise<Ebook | null> {
 // Admin Category Management
 // ----------------------------------------------------
 export async function createCategory(data: Partial<Category>): Promise<Category> {
+  syncStoresFromStorage();
   const newCat: Category = {
     id: `cat-${Date.now()}`,
     name: data.name || 'New Category',
@@ -453,22 +634,27 @@ export async function createCategory(data: Partial<Category>): Promise<Category>
     created_at: new Date().toISOString()
   };
   categoriesStore.push(newCat);
+  writeStorage(STORAGE_KEYS.CATEGORIES, categoriesStore);
   logActivity('Category Created', `Created category "${newCat.name}"`);
   return newCat;
 }
 
 export async function updateCategory(id: string, data: Partial<Category>): Promise<Category | null> {
+  syncStoresFromStorage();
   const index = categoriesStore.findIndex(c => c.id === id);
   if (index === -1) return null;
   categoriesStore[index] = { ...categoriesStore[index], ...data };
+  writeStorage(STORAGE_KEYS.CATEGORIES, categoriesStore);
   logActivity('Category Updated', `Updated category "${categoriesStore[index].name}"`);
   return categoriesStore[index];
 }
 
 export async function deleteCategory(id: string): Promise<boolean> {
+  syncStoresFromStorage();
   const cat = categoriesStore.find(c => c.id === id);
   if (!cat) return false;
   categoriesStore = categoriesStore.filter(c => c.id !== id);
+  writeStorage(STORAGE_KEYS.CATEGORIES, categoriesStore);
   logActivity('Category Deleted', `Deleted category "${cat.name}"`);
   return true;
 }
@@ -477,6 +663,7 @@ export async function deleteCategory(id: string): Promise<boolean> {
 // Admin Orders & Customer Functions
 // ----------------------------------------------------
 export async function getAdminOrders(options?: { status?: string; searchQuery?: string }): Promise<Order[]> {
+  syncStoresFromStorage();
   let list = [...ordersStore];
   if (options?.status && options.status !== 'all') {
     list = list.filter(o => o.status === options.status);
@@ -493,14 +680,17 @@ export async function getAdminOrders(options?: { status?: string; searchQuery?: 
 }
 
 export async function updateOrderStatus(orderId: string, status: Order['status']): Promise<Order | null> {
+  syncStoresFromStorage();
   const order = ordersStore.find(o => o.id === orderId);
   if (!order) return null;
   order.status = status;
+  writeStorage(STORAGE_KEYS.ORDERS, ordersStore);
   logActivity('Order Status Updated', `Updated order ${order.order_number} to ${status}`);
   return order;
 }
 
 export async function getAdminCustomers(): Promise<Customer[]> {
+  syncStoresFromStorage();
   // Aggregate from ordersStore and purchasesStore
   const customerMap: Record<string, Customer> = {};
 
@@ -540,10 +730,12 @@ export async function getAdminCustomers(): Promise<Customer[]> {
 // Admin Digital Download Management
 // ----------------------------------------------------
 export async function getAdminDownloadLinks(): Promise<DownloadLink[]> {
+  syncStoresFromStorage();
   return downloadLinksStore;
 }
 
 export async function toggleDownloadLinkStatus(id: string): Promise<DownloadLink | null> {
+  syncStoresFromStorage();
   const link = downloadLinksStore.find(d => d.id === id);
   if (!link) return null;
   link.active = !link.active;
@@ -552,6 +744,7 @@ export async function toggleDownloadLinkStatus(id: string): Promise<DownloadLink
 }
 
 export async function regenerateDownloadLink(id: string): Promise<DownloadLink | null> {
+  syncStoresFromStorage();
   const link = downloadLinksStore.find(d => d.id === id);
   if (!link) return null;
   link.token = `dl_tok_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -565,15 +758,19 @@ export async function regenerateDownloadLink(id: string): Promise<DownloadLink |
 // Admin Payments & Coupons
 // ----------------------------------------------------
 export async function getAdminPayments(): Promise<PaymentTransaction[]> {
+  syncStoresFromStorage();
   return paymentTransactionsStore;
 }
 
 export async function getAdminCoupons(): Promise<Coupon[]> {
+  syncStoresFromStorage();
   return couponsStore;
 }
 
 export async function validateCoupon(code: string, amount: number) {
-  const coupon = couponsStore.find(c => c.code.toUpperCase() === code.toUpperCase() && c.active);
+  syncStoresFromStorage(true);
+  const targetCode = (code || '').trim().toUpperCase();
+  const coupon = couponsStore.find(c => c.code.trim().toUpperCase() === targetCode && c.active);
   if (!coupon) return { valid: false, message: 'Invalid or inactive promo code' };
   
   if (coupon.min_order_amount && amount < coupon.min_order_amount) {
@@ -591,6 +788,7 @@ export async function validateCoupon(code: string, amount: number) {
 }
 
 export async function createCoupon(data: Partial<Coupon>): Promise<Coupon> {
+  syncStoresFromStorage();
   const newCoupon: Coupon = {
     id: `coup-${Date.now()}`,
     code: (data.code || 'WELCOME20').toUpperCase().trim(),
@@ -604,22 +802,27 @@ export async function createCoupon(data: Partial<Coupon>): Promise<Coupon> {
     created_at: new Date().toISOString()
   };
   couponsStore.push(newCoupon);
+  writeStorage(STORAGE_KEYS.COUPONS, couponsStore);
   logActivity('Coupon Created', `Created promo code ${newCoupon.code} (${newCoupon.discount_value}% OFF)`);
   return newCoupon;
 }
 
 export async function updateCoupon(id: string, data: Partial<Coupon>): Promise<Coupon | null> {
+  syncStoresFromStorage();
   const index = couponsStore.findIndex(c => c.id === id);
   if (index === -1) return null;
   couponsStore[index] = { ...couponsStore[index], ...data };
+  writeStorage(STORAGE_KEYS.COUPONS, couponsStore);
   logActivity('Coupon Updated', `Updated coupon ${couponsStore[index].code}`);
   return couponsStore[index];
 }
 
 export async function deleteCoupon(id: string): Promise<boolean> {
+  syncStoresFromStorage();
   const coupon = couponsStore.find(c => c.id === id);
   if (!coupon) return false;
   couponsStore = couponsStore.filter(c => c.id !== id);
+  writeStorage(STORAGE_KEYS.COUPONS, couponsStore);
   logActivity('Coupon Deleted', `Deleted coupon ${coupon.code}`);
   return true;
 }
@@ -628,21 +831,27 @@ export async function deleteCoupon(id: string): Promise<boolean> {
 // CMS Content & Store Settings
 // ----------------------------------------------------
 export async function getCMSContent(): Promise<CMSContent> {
+  syncStoresFromStorage();
   return cmsStore;
 }
 
 export async function updateCMSContent(data: Partial<CMSContent>): Promise<CMSContent> {
+  syncStoresFromStorage();
   cmsStore = { ...cmsStore, ...data };
+  writeStorage(STORAGE_KEYS.CMS, cmsStore);
   logActivity('CMS Updated', 'Updated website homepage/about content from admin panel');
   return cmsStore;
 }
 
 export async function getStoreSettings(): Promise<StoreSettings> {
+  syncStoresFromStorage();
   return storeSettingsStore;
 }
 
 export async function updateStoreSettings(data: Partial<StoreSettings>): Promise<StoreSettings> {
+  syncStoresFromStorage();
   storeSettingsStore = { ...storeSettingsStore, ...data };
+  writeStorage(STORAGE_KEYS.SETTINGS, storeSettingsStore);
   logActivity('Settings Updated', 'Updated store settings, currency or gateway parameters');
   return storeSettingsStore;
 }
@@ -651,6 +860,7 @@ export async function updateStoreSettings(data: Partial<StoreSettings>): Promise
 // Analytics, Emails & Activity Logs
 // ----------------------------------------------------
 export async function getAnalytics(dateFilter: string = '30d') {
+  syncStoresFromStorage();
   const totalRevenue = ordersStore.filter(o => o.status === 'paid').reduce((sum, o) => sum + o.total_amount, 0);
   const totalOrders = ordersStore.length;
   const totalEbooks = ebooksStore.length;
@@ -672,10 +882,12 @@ export async function getAnalytics(dateFilter: string = '30d') {
 }
 
 export async function getEmailTemplates(): Promise<EmailTemplate[]> {
+  syncStoresFromStorage();
   return emailTemplatesStore;
 }
 
 export async function updateEmailTemplate(id: EmailTemplate['id'], data: Partial<EmailTemplate>): Promise<EmailTemplate | null> {
+  syncStoresFromStorage();
   const index = emailTemplatesStore.findIndex(e => e.id === id);
   if (index === -1) return null;
   emailTemplatesStore[index] = { ...emailTemplatesStore[index], ...data };
@@ -695,9 +907,11 @@ export async function logActivity(action: string, details: string, admin?: Admin
     ip_address: '127.0.0.1'
   };
   activityLogsStore.unshift(newLog);
+  writeStorage(STORAGE_KEYS.LOGS, activityLogsStore);
 }
 
 export async function getActivityLogs(): Promise<ActivityLog[]> {
+  syncStoresFromStorage();
   return activityLogsStore;
 }
 
@@ -708,7 +922,7 @@ export async function createOrder(data: {
   ebookId: string;
   couponCode?: string;
 }): Promise<{ order: Order; ebook: Ebook }> {
-  const ebook = ebooksStore.find(e => e.id === data.ebookId);
+  const ebook = await getEbookById(data.ebookId);
   if (!ebook) throw new Error('eBook not found');
 
   let finalPrice = ebook.price;
@@ -722,84 +936,110 @@ export async function createOrder(data: {
     }
   }
 
+  const orderId = `ord-${Date.now()}`;
+  const orderNumber = `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(1000 + Math.random() * 9000)}`;
+
   const order: Order = {
-    id: `ord-${Date.now()}`,
-    order_number: `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(1000 + Math.random() * 9000)}`,
+    id: orderId,
+    order_number: orderNumber,
     user_id: data.userId,
     user_email: data.userEmail,
     user_name: data.userEmail.split('@')[0],
     total_amount: finalPrice,
     discount_amount: discountAmount,
     currency: ebook.currency,
-    status: 'paid',
-    payment_provider: 'stripe',
-    payment_id: `pay_usa_${Date.now()}`,
+    status: 'pending',
+    payment_provider: 'razorpay',
+    payment_id: '',
     coupon_code: data.couponCode,
-    download_status: 'active',
+    download_status: 'disabled',
     download_count: 0,
     created_at: new Date().toISOString(),
-    items: [{ id: `item-${Date.now()}`, order_id: `ord-${Date.now()}`, ebook_id: ebook.id, price: finalPrice, ebook }]
+    items: [{ id: `item-${Date.now()}`, order_id: orderId, ebook_id: ebook.id, price: finalPrice, ebook }]
   };
 
   ordersStore.unshift(order);
+  writeStorage(STORAGE_KEYS.ORDERS, ordersStore);
 
-  // Add purchase record
-  purchasesStore.unshift({
-    id: `pur-${Date.now()}`,
-    user_id: data.userId,
-    ebook_id: ebook.id,
-    order_id: order.id,
-    created_at: new Date().toISOString(),
-    ebook
-  });
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      await supabase.from('orders').insert({
+        id: order.id,
+        order_number: order.order_number,
+        user_id: order.user_id,
+        total_amount: order.total_amount,
+        discount_amount: order.discount_amount,
+        currency: order.currency,
+        status: 'pending',
+        payment_provider: 'razorpay',
+        coupon_code: order.coupon_code
+      });
+    } catch (e) {
+      console.warn('Supabase createOrder failed:', e);
+    }
+  }
 
-  // Create download link
-  downloadLinksStore.unshift({
-    id: `dl-${Date.now()}`,
-    order_id: order.id,
-    ebook_id: ebook.id,
-    ebook_title: ebook.title,
-    customer_email: data.userEmail,
-    token: `dl_tok_${Date.now()}`,
-    download_count: 0,
-    max_downloads: 10,
-    expires_at: new Date(Date.now() + 86400000 * 365).toISOString(),
-    active: true,
-    history: []
-  });
-
-  // Create payment transaction
-  paymentTransactionsStore.unshift({
-    id: `pay-tx-${Date.now()}`,
-    order_id: order.id,
-    customer_name: data.userEmail.split('@')[0],
-    customer_email: data.userEmail,
-    amount: finalPrice,
-    currency: 'USD',
-    gateway: 'stripe',
-    status: 'succeeded',
-    transaction_id: order.payment_id || `ch_${Date.now()}`,
-    created_at: new Date().toISOString()
-  });
-
-  ebook.sales_count = (ebook.sales_count || 0) + 1;
-  logActivity('New Order Completed', `Customer ${data.userEmail} purchased "${data.userEmail}" for $${finalPrice} USD`);
-
+  logActivity('Order Initiated', `Customer ${data.userEmail} initiated order for "${ebook.title}"`);
   return { order, ebook };
 }
 
 export async function completeOrder(orderId: string, paymentId: string) {
-  const order = ordersStore.find(o => o.id === orderId || o.order_number === orderId);
+  let order = ordersStore.find(o => o.id === orderId || o.order_number === orderId);
+  
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      const { data } = await supabase.from('orders').select('*').or(`id.eq.${orderId},order_number.eq.${orderId}`).maybeSingle();
+      if (data) order = data as Order;
+    } catch (e) {
+      console.warn('Supabase completeOrder fetch failed:', e);
+    }
+  }
+
   if (!order) {
     return { success: false, error: 'Order not found' };
   }
 
   order.status = 'paid';
   order.payment_id = paymentId;
+  order.download_status = 'active';
 
-  // Find purchase
-  const purchase = purchasesStore.find(p => p.order_id === order.id) || purchasesStore[0];
-  return { success: true, order, purchase };
+  const ebookId = order.items?.[0]?.ebook_id || (order as any).ebook_id;
+  const ebook = ebookId ? await getEbookById(ebookId) : null;
+
+  const newPurchase: Purchase = {
+    id: `pur-${Date.now()}`,
+    user_id: order.user_id,
+    ebook_id: ebookId || '',
+    order_id: order.id,
+    created_at: new Date().toISOString(),
+    ebook: ebook || undefined
+  };
+
+  // Add purchase record locally
+  if (!purchasesStore.some(p => p.user_id === order.user_id && p.ebook_id === ebookId)) {
+    purchasesStore.unshift(newPurchase);
+    writeStorage(STORAGE_KEYS.PURCHASES, purchasesStore);
+  }
+
+  // Update Supabase order and purchase records
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = createClient();
+      await supabase.from('orders').update({ status: 'paid', payment_id: paymentId }).eq('id', order.id);
+      await supabase.from('purchases').upsert({
+        user_id: order.user_id,
+        ebook_id: ebookId,
+        order_id: order.id
+      }, { onConflict: 'user_id,ebook_id' });
+    } catch (e) {
+      console.warn('Supabase completeOrder update failed:', e);
+    }
+  }
+
+  logActivity('Order Completed & Verified', `Order ${order.order_number} verified with payment ${paymentId}`);
+  return { success: true, order, purchase: newPurchase };
 }
 
 export async function updateReadingProgress(userId: string, ebookId: string, currentPage: number, totalPages: number) {

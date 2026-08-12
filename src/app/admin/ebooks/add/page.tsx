@@ -232,40 +232,167 @@ export default function AddEbookPage() {
             />
           </div>
 
-          {/* Files & Assets */}
-          <div className="p-4 bg-surface/60 rounded-2xl border border-surface-border space-y-4">
-            <h4 className="font-bold text-white uppercase text-[11px] tracking-wider">Digital Assets & Storage</h4>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Digital Assets & Storage */}
+          <div className="p-6 bg-surface/60 rounded-2xl border border-surface-border space-y-6">
+            <div className="flex items-center justify-between">
               <div>
-                <label className="block font-semibold mb-1 text-slate-300">Cover Artwork URL / Path</label>
-                <input
-                  type="text"
-                  value={coverUrl}
-                  onChange={(e) => setCoverUrl(e.target.value)}
-                  className="w-full bg-surface border border-surface-border rounded-xl p-2 text-white text-[11px]"
-                />
+                <h4 className="font-bold text-white uppercase text-xs tracking-wider flex items-center gap-2">
+                  <Upload className="w-4 h-4 text-gold" />
+                  Digital Assets & Media Upload
+                </h4>
+                <p className="text-[11px] text-slate-400 mt-0.5">Upload cover artwork images (PNG, JPG, WebP) and eBook PDF documents.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              
+              {/* Cover Image Upload Box */}
+              <div className="space-y-2">
+                <label className="block font-semibold text-xs text-white">Cover Artwork Image *</label>
+                <div className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-surface-border hover:border-gold/60 rounded-2xl bg-surface/40 transition-colors text-center relative group">
+                  {coverUrl ? (
+                    <div className="relative w-full aspect-[3/4] max-h-48 rounded-xl overflow-hidden mb-3 border border-surface-border shadow-lg">
+                      <img src={coverUrl} alt="Cover Preview" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setCoverUrl('')}
+                        className="absolute top-2 right-2 bg-red-600/90 text-white p-1 rounded-full text-xs hover:bg-red-700 transition-colors"
+                        title="Remove Cover"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="py-6 flex flex-col items-center">
+                      <Image className="w-8 h-8 text-gold/80 mb-2 stroke-[1.5]" />
+                      <span className="text-xs font-bold text-white">No cover selected</span>
+                    </div>
+                  )}
+
+                  <input
+                    type="file"
+                    accept="image/*"
+                    id="add-cover-file-upload"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (evt) => {
+                          if (evt.target?.result) {
+                            setCoverUrl(evt.target.result as string);
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+
+                  <label
+                    htmlFor="add-cover-file-upload"
+                    className="cursor-pointer px-4 py-2 bg-gold/10 hover:bg-gold/20 text-gold border border-gold/40 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload Image File</span>
+                  </label>
+                </div>
+
+                <div className="pt-1">
+                  <span className="text-[10px] text-slate-400 block mb-1">Or enter Image URL manually:</span>
+                  <input
+                    type="text"
+                    placeholder="https://..."
+                    value={coverUrl}
+                    onChange={(e) => setCoverUrl(e.target.value)}
+                    className="w-full bg-surface border border-surface-border rounded-xl p-2 text-white text-[11px] focus:border-gold focus:outline-none"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block font-semibold mb-1 text-slate-300">Protected PDF File Path</label>
-                <input
-                  type="text"
-                  value={filePath}
-                  onChange={(e) => setFilePath(e.target.value)}
-                  className="w-full bg-surface border border-surface-border rounded-xl p-2 text-white text-[11px]"
-                />
+              {/* Protected PDF File Upload */}
+              <div className="space-y-2">
+                <label className="block font-semibold text-xs text-white">Protected eBook PDF File</label>
+                <div className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-surface-border hover:border-gold/60 rounded-2xl bg-surface/40 transition-colors text-center">
+                  <FileText className="w-8 h-8 text-emerald-400/80 mb-2 stroke-[1.5]" />
+                  <span className="text-xs font-bold text-white mb-1 truncate max-w-full px-2">
+                    {filePath ? filePath.split('/').pop() : 'No PDF file attached'}
+                  </span>
+                  
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    id="add-pdf-file-upload"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setFilePath(`private/uploads/${file.name}`);
+                      }
+                    }}
+                  />
+
+                  <label
+                    htmlFor="add-pdf-file-upload"
+                    className="cursor-pointer px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors mt-2"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload PDF File</span>
+                  </label>
+                </div>
+
+                <div className="pt-1">
+                  <span className="text-[10px] text-slate-400 block mb-1">Internal Storage Path:</span>
+                  <input
+                    type="text"
+                    value={filePath}
+                    onChange={(e) => setFilePath(e.target.value)}
+                    className="w-full bg-surface border border-surface-border rounded-xl p-2 text-white text-[11px] focus:border-gold focus:outline-none"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block font-semibold mb-1 text-slate-300">Sample Preview PDF URL</label>
-                <input
-                  type="text"
-                  value={previewUrl}
-                  onChange={(e) => setPreviewUrl(e.target.value)}
-                  className="w-full bg-surface border border-surface-border rounded-xl p-2 text-white text-[11px]"
-                />
+              {/* Sample Preview PDF */}
+              <div className="space-y-2">
+                <label className="block font-semibold text-xs text-white">Sample Preview PDF</label>
+                <div className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-surface-border hover:border-gold/60 rounded-2xl bg-surface/40 transition-colors text-center">
+                  <BookOpen className="w-8 h-8 text-purple-400/80 mb-2 stroke-[1.5]" />
+                  <span className="text-xs font-bold text-white mb-1 truncate max-w-full px-2">
+                    {previewUrl ? previewUrl.split('/').pop() : 'No sample PDF attached'}
+                  </span>
+
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    id="add-sample-file-upload"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setPreviewUrl(`samples/${file.name}`);
+                      }
+                    }}
+                  />
+
+                  <label
+                    htmlFor="add-sample-file-upload"
+                    className="cursor-pointer px-4 py-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/40 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors mt-2"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload Sample PDF</span>
+                  </label>
+                </div>
+
+                <div className="pt-1">
+                  <span className="text-[10px] text-slate-400 block mb-1">Sample PDF URL / Path:</span>
+                  <input
+                    type="text"
+                    value={previewUrl}
+                    onChange={(e) => setPreviewUrl(e.target.value)}
+                    className="w-full bg-surface border border-surface-border rounded-xl p-2 text-white text-[11px] focus:border-gold focus:outline-none"
+                  />
+                </div>
               </div>
+
             </div>
           </div>
 

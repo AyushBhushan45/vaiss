@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Ebook } from '@/types';
 import { useAuth } from '@/lib/auth/context';
+import { validateCoupon } from '@/lib/data/repository';
 
 interface CheckoutModalProps {
   ebook: Ebook;
@@ -19,13 +20,14 @@ interface CheckoutModalProps {
 
 export function CheckoutModal({ ebook, isOpen, onClose }: CheckoutModalProps) {
   const { user, login } = useAuth();
+
   const [email, setEmail] = useState(user?.email || '');
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'express' | 'paypal' | 'upi' | 'bank'>('card');
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number } | null>(null);
   const [couponError, setCouponError] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'express' | 'paypal' | 'upi' | 'bank'>('card');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [processingStepText, setProcessingStepText] = useState('');
+  const [processingStepText, setProcessingStepText] = useState('Initializing Security Token...');
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
   const [orderInfo, setOrderInfo] = useState<{ orderNumber: string } | null>(null);
 
@@ -44,14 +46,9 @@ export function CheckoutModal({ ebook, isOpen, onClose }: CheckoutModalProps) {
     }
 
     try {
-      const res = await fetch('/api/coupons/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: targetCode, amount: originalPrice })
-      });
-      const data = await res.json();
+      const data = await validateCoupon(targetCode, originalPrice);
       if (data.valid) {
-        setAppliedCoupon({ code: targetCode.toUpperCase(), discountAmount: data.discountAmount });
+        setAppliedCoupon({ code: targetCode.toUpperCase(), discountAmount: data.discountAmount || 0 });
         setCouponCode(targetCode.toUpperCase());
       } else {
         setCouponError(data.message || 'Invalid promo code');

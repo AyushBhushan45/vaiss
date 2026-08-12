@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { completeOrder } from '@/lib/data/repository';
+import crypto from 'crypto';
 
 export async function POST(request: Request) {
   try {
@@ -10,11 +11,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
     }
 
-    // In a live Razorpay production setup, HMAC verification uses crypto:
-    // const hmac = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!);
-    // hmac.update(orderId + "|" + paymentId);
-    // const generated_signature = hmac.digest('hex');
-    // if (generated_signature !== signature) return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
+    const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
+
+    // Perform HMAC SHA256 signature verification when production secret is provided
+    if (signature && razorpaySecret && razorpaySecret !== 'rzp_test_secret_key') {
+      const hmac = crypto.createHmac('sha256', razorpaySecret);
+      hmac.update(`${orderId}|${paymentId}`);
+      const generatedSignature = hmac.digest('hex');
+
+      if (generatedSignature !== signature) {
+        return NextResponse.json({ error: 'Invalid payment signature' }, { status: 400 });
+      }
+    }
 
     const result = await completeOrder(orderId, paymentId || `pay_verified_${Date.now()}`);
 

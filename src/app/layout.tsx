@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Lumina Books | Digital eBooks & Masterclasses',
     description: 'Transform your wealth, business, and mindset with actionable digital publishing.',
-    url: 'https://luminabooks.com',
+    url: 'https://luminaebooks.netlify.app',
     siteName: 'Lumina Books',
     images: [{ url: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=1200&auto=format&fit=crop' }],
     type: 'website',

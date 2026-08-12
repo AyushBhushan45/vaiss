@@ -154,19 +154,13 @@ export default function HomePage() {
 
               {/* Executive Social Proof & Reader Metrics */}
               <div className="pt-6 border-t border-surface-border/50 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-xs">
-                {/* Stacked Reader Avatars */}
-                <div className="flex items-center gap-3">
-                  <div className="flex -space-x-2 overflow-hidden">
-                    <img className="inline-block h-7 w-7 rounded-full ring-2 ring-background object-cover" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Reader" />
-                    <img className="inline-block h-7 w-7 rounded-full ring-2 ring-background object-cover" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80" alt="Reader" />
-                    <img className="inline-block h-7 w-7 rounded-full ring-2 ring-background object-cover" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80" alt="Reader" />
-                    <div className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gold/20 text-[10px] font-bold text-gold ring-2 ring-background border border-gold/40">
-                      +8k
-                    </div>
+                <div className="flex items-center gap-2 text-left">
+                  <div className="w-8 h-8 rounded-full bg-gold/10 border border-gold/30 text-gold flex items-center justify-center font-bold">
+                    <ShieldCheck className="w-4 h-4" />
                   </div>
                   <div className="text-left">
-                    <span className="block font-bold text-white text-xs">8,500+ Active Readers</span>
-                    <span className="text-[10px] text-slate-400">Joined this month</span>
+                    <span className="block font-bold text-white text-xs">Verified Digital Publishing</span>
+                    <span className="text-[10px] text-slate-400">Lifetime access across all devices</span>
                   </div>
                 </div>
 
@@ -180,8 +174,8 @@ export default function HomePage() {
                     ))}
                   </div>
                   <div>
-                    <span className="block font-bold text-white text-xs">4.95 / 5.0 Rating</span>
-                    <span className="text-[10px] text-slate-400">From 1,700+ Verified Reviews</span>
+                    <span className="block font-bold text-white text-xs">4.95 / 5.0 Reader Rating</span>
+                    <span className="text-[10px] text-slate-400">Curated Masterclasses & Guides</span>
                   </div>
                 </div>
               </div>
@@ -193,13 +187,13 @@ export default function HomePage() {
               <div className="relative mx-auto max-w-sm">
                 
                 {/* Floating Highlight Card */}
-                <div className="absolute -top-6 -left-6 z-20 glass-panel p-4 rounded-2xl shadow-2xl hidden sm:flex items-center gap-3 border border-gold/30 animate-pulse">
+                <div className="absolute -top-6 -left-6 z-20 glass-panel p-4 rounded-2xl shadow-2xl hidden sm:flex items-center gap-3 border border-gold/30">
                   <div className="w-10 h-10 rounded-xl bg-gold/20 text-gold flex items-center justify-center font-bold font-serif">
                     #1
                   </div>
                   <div>
-                    <span className="block text-xs font-bold text-white">Bestseller Unlocked</span>
-                    <span className="text-[10px] text-slate-400">142+ Reviews This Week</span>
+                    <span className="block text-xs font-bold text-white">Bestselling Release</span>
+                    <span className="text-[10px] text-slate-400">Instant PDF & Reader Access</span>
                   </div>
                 </div>
 
@@ -281,20 +275,20 @@ export default function HomePage() {
       >
         <div className="glass-panel rounded-3xl p-8 border border-surface-border grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           <div>
-            <span className="font-serif text-3xl md:text-4xl font-bold gold-gradient-text">10,000+</span>
-            <span className="block text-xs text-slate-400 uppercase tracking-wider mt-1">Active Readers</span>
+            <span className="font-serif text-3xl md:text-4xl font-bold gold-gradient-text">{ebooks.length || 13}</span>
+            <span className="block text-xs text-slate-400 uppercase tracking-wider mt-1">Masterclass eBooks</span>
           </div>
           <div>
-            <span className="font-serif text-3xl md:text-4xl font-bold text-white">4.9 / 5</span>
+            <span className="font-serif text-3xl md:text-4xl font-bold text-white">4.95 / 5.0</span>
             <span className="block text-xs text-slate-400 uppercase tracking-wider mt-1">Reader Satisfaction</span>
           </div>
           <div>
-            <span className="font-serif text-3xl md:text-4xl font-bold gold-gradient-text">100%</span>
-            <span className="block text-xs text-slate-400 uppercase tracking-wider mt-1">Instant Access</span>
+            <span className="font-serif text-3xl md:text-4xl font-bold gold-gradient-text">100% Instant</span>
+            <span className="block text-xs text-slate-400 uppercase tracking-wider mt-1">Cloud Reader & PDF</span>
           </div>
           <div>
-            <span className="font-serif text-3xl md:text-4xl font-bold text-white">Zero</span>
-            <span className="block text-xs text-slate-400 uppercase tracking-wider mt-1">Hidden Subscription Fees</span>
+            <span className="font-serif text-3xl md:text-4xl font-bold text-white">Lifetime</span>
+            <span className="block text-xs text-slate-400 uppercase tracking-wider mt-1">One-Time Access</span>
           </div>
         </div>
       </motion.section>
@@ -359,7 +353,7 @@ export default function HomePage() {
         </motion.div>
 
         <motion.div variants={staggerContainer} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {bestsellerBooks.map((book) => (
+          {bestsellerBooks.slice(0, 4).map((book) => (
             <motion.div key={book.id} variants={fadeInUp}>
               <EbookCard
                 ebook={book}

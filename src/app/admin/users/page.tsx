@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { UserCheck, Plus, ShieldCheck, CheckCircle2 } from 'lucide-react';
-import { getAllAdminUsers, createAdminUser } from '@/lib/data/repository';
+import { UserCheck, Plus, ShieldCheck, CheckCircle2, UserX, Trash2 } from 'lucide-react';
+import { getAllAdminUsers, createAdminUser, deleteAdminUser } from '@/lib/data/repository';
 import { AdminUser, AdminRole } from '@/types/admin';
 
 export default function AdminUsersPage() {
@@ -25,6 +25,15 @@ export default function AdminUsersPage() {
     setEmail('');
   };
 
+  const handleRevoke = async (id: string, userName: string) => {
+    if (confirm(`Are you sure you want to revoke admin access for "${userName}"?`)) {
+      const ok = await deleteAdminUser(id);
+      if (ok) {
+        setUsers(users.filter(u => u.id !== id));
+      }
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="glass-panel p-6 rounded-3xl border border-surface-border flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -34,7 +43,7 @@ export default function AdminUsersPage() {
             <span>Staff Permissions</span>
           </div>
           <h2 className="font-serif text-2xl font-bold text-white mt-1">Admin Staff & Role-Based Access</h2>
-          <p className="text-xs text-slate-400">Manage administrator roles (Owner, Editor, Support, Analyst).</p>
+          <p className="text-xs text-slate-400">Manage administrator roles (Owner, Editor, Support, Analyst) & revoke access.</p>
         </div>
       </div>
 
@@ -95,6 +104,7 @@ export default function AdminUsersPage() {
               <th className="p-4">Email</th>
               <th className="p-4">Role</th>
               <th className="p-4">Created Date</th>
+              <th className="p-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-surface-border/40">
@@ -107,6 +117,20 @@ export default function AdminUsersPage() {
                 <td className="p-4 text-slate-400">{u.email}</td>
                 <td className="p-4 uppercase font-bold text-gold text-[10px]">{u.role}</td>
                 <td className="p-4 text-slate-400 text-[11px]">{new Date(u.created_at).toLocaleDateString()}</td>
+                <td className="p-4 text-right">
+                  {u.role !== 'owner' ? (
+                    <button
+                      onClick={() => handleRevoke(u.id, u.name)}
+                      className="px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-[11px] font-bold inline-flex items-center gap-1.5 transition-colors"
+                      title="Revoke Access"
+                    >
+                      <UserX className="w-3.5 h-3.5" />
+                      <span>Revoke Access</span>
+                    </button>
+                  ) : (
+                    <span className="text-[10px] text-slate-400 font-semibold italic">System Owner</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

@@ -8,10 +8,14 @@ export async function GET(
   try {
     const ebookId = params.id;
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId') || 'usr-customer'; // Default test session
+    const userId = searchParams.get('userId');
 
     if (!ebookId) {
       return NextResponse.json({ error: 'eBook ID missing' }, { status: 400 });
+    }
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized: User authentication required.' }, { status: 401 });
     }
 
     // 1. Check if eBook exists
@@ -24,7 +28,7 @@ export async function GET(
     const isOwner = await verifyUserOwnership(userId, ebookId);
     if (!isOwner) {
       return NextResponse.json(
-        { error: 'Unauthorized: You must purchase this eBook before downloading.' },
+        { error: 'Forbidden: You must purchase this eBook before downloading.' },
         { status: 403 }
       );
     }

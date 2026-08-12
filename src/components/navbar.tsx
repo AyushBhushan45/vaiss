@@ -14,18 +14,20 @@ export function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
+
   const isActive = (path: string) => pathname === path;
 
   return (
-    <header className="sticky top-0 z-[100] glass-panel border-b border-surface-border bg-background/90 backdrop-blur-xl shadow-lg">
+    <header className="sticky top-0 z-[100] bg-[#090D16]/95 border-b border-surface-border shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold to-yellow-600 flex items-center justify-center shadow-glow-gold transition-transform group-hover:scale-105">
-              <BookOpen className="w-6 h-6 text-background stroke-[2.5]" />
-            </div>
+            <img src="/icon.svg" alt="Lumina Books" className="w-10 h-10 rounded-xl shadow-glow-gold transition-transform group-hover:scale-105 object-contain" />
             <div>
               <span className="font-serif text-2xl font-bold tracking-tight text-white group-hover:text-gold transition-colors">
                 Lumina<span className="gold-gradient-text">.</span>
@@ -60,7 +62,13 @@ export function Navbar() {
               href="/#faq"
               className="transition-colors hover:text-white"
             >
-              FAQ & Support
+              FAQs
+            </Link>
+            <Link
+              href="/contact"
+              className={`transition-colors hover:text-white ${isActive('/contact') ? 'text-gold font-semibold' : ''}`}
+            >
+              Contact Us
             </Link>
           </nav>
 
@@ -104,6 +112,16 @@ export function Navbar() {
             {/* Authenticated Links */}
             {user ? (
               <div className="flex items-center gap-3">
+                {user.role === 'admin' && (
+                  <Link
+                    href="/admin/dashboard"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-gold bg-gold/10 border border-gold/40 shadow-glow-gold hover:bg-gold/20 transition-all"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-gold" />
+                    <span>Admin Panel</span>
+                  </Link>
+                )}
+
                 <Link
                   href="/library"
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
@@ -123,14 +141,6 @@ export function Navbar() {
                 >
                   <User className="w-5 h-5" />
                 </Link>
-
-                <button
-                  onClick={logout}
-                  className="p-2 text-slate-400 hover:text-red-400 transition-colors"
-                  title="Logout"
-                >
-                  <LogOut className="w-5 h-5" />
-                </button>
               </div>
             ) : (
               <div className="flex items-center gap-3">
@@ -225,7 +235,16 @@ export function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="block px-3 py-2 rounded-xl text-base font-semibold text-slate-200 hover:bg-surface-border/40"
               >
-                FAQ & Support
+                FAQs
+              </Link>
+              <Link
+                href="/contact"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-3 py-2 rounded-xl text-base font-semibold transition-colors ${
+                  isActive('/contact') ? 'bg-gold/10 text-gold' : 'text-slate-200 hover:bg-surface-border/40'
+                }`}
+              >
+                Contact Us
               </Link>
 
               {user ? (

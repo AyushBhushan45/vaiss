@@ -51,9 +51,7 @@ export default function AdminLoginPage() {
         
         {/* Brand Header */}
         <div className="text-center space-y-3">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-gold to-yellow-600 flex items-center justify-center mx-auto shadow-glow-gold">
-            <ShieldCheck className="w-8 h-8 text-background stroke-[2.5]" />
-          </div>
+          <img src="/icon.svg" alt="Lumina Admin" className="w-14 h-14 rounded-2xl object-contain mx-auto shadow-glow-gold" />
           <div>
             <h1 className="font-serif text-3xl font-bold tracking-tight text-white">
               Lumina<span className="gold-gradient-text">.Admin</span>

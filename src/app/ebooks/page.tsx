@@ -18,16 +18,24 @@ export default function EbooksCatalogPage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<'featured' | 'price-low' | 'price-high' | 'newest'>('featured');
   const [selectedEbookForCheckout, setSelectedEbookForCheckout] = useState<Ebook | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     async function loadData() {
-      const allBooks = await getEbooks();
-      const allCats = await getCategories();
-      setEbooks(allBooks);
-      setCategories(allCats);
-      if (user) {
-        const userPurchases = await getUserPurchases(user.id);
-        setPurchasedEbookIds(userPurchases.map(p => p.ebook_id));
+      setIsLoading(true);
+      try {
+        const allBooks = await getEbooks();
+        const allCats = await getCategories();
+        setEbooks(allBooks);
+        setCategories(allCats);
+        if (user) {
+          const userPurchases = await getUserPurchases(user.id);
+          setPurchasedEbookIds(userPurchases.map(p => p.ebook_id));
+        }
+      } catch (err) {
+        console.error('Failed loading catalog data:', err);
+      } finally {
+        setIsLoading(false);
       }
     }
     loadData();
@@ -44,7 +52,10 @@ export default function EbooksCatalogPage() {
 
   // Filter & Sort Logic
   const filteredEbooks = ebooks.filter((b) => {
-    const matchesCategory = selectedCategory === 'all' || b.category_id === selectedCategory;
+    const matchedCat = categories.find(c => c.id === selectedCategory || c.slug === selectedCategory);
+    const targetCatId = matchedCat ? matchedCat.id : selectedCategory;
+
+    const matchesCategory = selectedCategory === 'all' || b.category_id === targetCatId || b.category_id === selectedCategory;
     const matchesSearch =
       !searchQuery.trim() ||
       b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -173,7 +184,18 @@ export default function EbooksCatalogPage() {
       </motion.div>
 
       {/* eBook Grid View */}
-      {filteredEbooks.length > 0 ? (
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 py-8">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <div key={i} className="glass-card rounded-2xl p-4 border border-surface-border animate-pulse space-y-4">
+              <div className="h-48 bg-slate-800 rounded-xl w-full" />
+              <div className="h-4 bg-slate-800 rounded w-3/4" />
+              <div className="h-3 bg-slate-800 rounded w-1/2" />
+              <div className="h-8 bg-slate-800 rounded-xl w-full" />
+            </div>
+          ))}
+        </div>
+      ) : filteredEbooks.length > 0 ? (
         <motion.div
           initial="hidden"
           animate="visible"

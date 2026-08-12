@@ -70,9 +70,7 @@ export function AdminSidebar({ mobileOpen = false, onCloseMobile }: SidebarProps
           {/* Header Brand */}
           <div className="flex items-center justify-between px-2 pb-4 border-b border-surface-border/60">
             <Link href="/admin/dashboard" className="flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-xl bg-gold flex items-center justify-center shadow-glow-gold">
-                <ShieldCheck className="w-5 h-5 text-background stroke-[2.5]" />
-              </div>
+              <img src="/icon.svg" alt="Lumina Admin" className="w-9 h-9 rounded-xl object-contain shadow-glow-gold" />
               <div>
                 <span className="font-serif text-lg font-bold text-white tracking-tight group-hover:text-gold transition-colors">
                   Lumina<span className="gold-gradient-text">.Admin</span>

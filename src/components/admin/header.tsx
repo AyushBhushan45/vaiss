@@ -35,7 +35,7 @@ export function AdminHeader({ onToggleMobile }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-surface-card/90 backdrop-blur-xl border-b border-surface-border px-4 sm:px-8 flex items-center justify-between">
+    <header className="sticky top-0 z-30 h-16 bg-[#0B1120] border-b border-surface-border px-4 sm:px-8 flex items-center justify-between shadow-md">
       
       {/* Left Title & Mobile Toggle */}
       <div className="flex items-center gap-4">

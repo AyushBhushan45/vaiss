@@ -14,8 +14,12 @@ export default function MyLibraryPage() {
 
   useEffect(() => {
     async function loadLibrary() {
-      const activeUserId = user ? user.id : 'usr-customer';
-      const data = await getUserPurchases(activeUserId);
+      if (!user) {
+        setPurchases([]);
+        setLoading(false);
+        return;
+      }
+      const data = await getUserPurchases(user.id);
       setPurchases(data);
       setLoading(false);
     }
